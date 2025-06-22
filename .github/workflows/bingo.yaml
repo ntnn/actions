@@ -1,0 +1,83 @@
+on:
+
+  # The expected trigger:
+  # pull_request:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - '.bingo/*.mod'
+
+  # uses: ntnn/actions/.github/workflows/bingo.yaml@main
+  # with:
+  #   base-ref: ${{ github.event.pull_request.base.sha }}
+  #   head-ref: ${{ github.event.pull_request.head.sha }}
+
+  workflow_call:
+    inputs:
+      base-ref:
+        required: true
+        type: string
+        description: 'Base commit of the PR'
+      head-ref:
+        required: true
+        type: string
+        description: 'Head commit of the PR'
+      fetch-depth:
+        required: false
+        type: number
+        default: 2
+        description: 'Fetch depth for the checkout action'
+      bingo-command:
+        required: false
+        type: string
+        default: 'go run github.com/bwplotka/bingo@latest'
+        description: 'Command to run bingo, could be replaced with e.g. `go tool bingo` if bingo is configured as a go tool'
+      commit-message:
+        required: false
+        type: string
+        default: 'chore(deps): update bingo files'
+        description: 'Commit message for the changes made by bingo'
+
+permissions:
+  contents: write  # Required to push changes back to the PR branch.
+
+jobs:
+  update-files:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # This needs a fetch depth large enough to include the PR base
+          # and head commits to list the changed files.
+          # This workflow _should_ only fire on PRs updating or adding
+          # bingo dependencies, so a fetch depth of 2 should be
+          # sufficient.
+          fetch-depth: ${{ inputs.fetch-depth }}
+
+      # Grab go version from the bingo mod file - the mod file cannot be
+      # passed directory to setup-go, it doesn't like the workarounds
+      # bingo does with `module _` etc.pp.
+      # If this fails (either because the fetch-depth wasn't large
+      # enough) setup-go will just use the default version which should
+      # be fine in most cases.
+      - run: echo "changed-mod=$(git diff --name-only ${{ inputs.base-ref }} ${{ inputs.head-ref }} | grep '\.bingo/.*\.mod')" >> "$GITHUB_OUTPUT"
+        id: changed-mod
+      - run: echo "go-version=$(awk '/^go / { print $2 }' ${{ steps.changed-mod.outputs.changed-mod }})" >> "$GITHUB_OUTPUT"
+        id: go-version
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ steps.go-version.outputs.go-version }}
+
+      # Update bingo files.
+      - run: ${{ inputs.bingo-command }} get
+
+      # Commit and push changes if there are any.
+      - run: echo "changes=$(git status --porcelain | wc -l)" >> "$GITHUB_OUTPUT"
+        id: changes
+      - if: steps.changes.outputs.changes != '0'
+        run: |
+          git config --local user.name "${{ github.repository_owner }}"
+          git config --local user.email "${{ github.repository_owner }}@users.noreply.github.com"
+          git add .bingo/*
+          git commit -m "${{ inputs.commit-message }}"
+          git push origin HEAD:${{ github.head_ref }}
