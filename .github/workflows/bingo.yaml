@@ -15,12 +15,14 @@ on:
   workflow_call:
     inputs:
       base-ref:
-        required: true
+        required: false
         type: string
+        default: ${{ github.event.pull_request.base.sha }}
         description: 'Base commit of the PR'
       head-ref:
-        required: true
+        required: false
         type: string
+        default: ${{ github.event.pull_request.head.sha }}
         description: 'Head commit of the PR'
       fetch-depth:
         required: false
@@ -37,6 +39,21 @@ on:
         type: string
         default: 'chore(deps): update bingo files'
         description: 'Commit message for the changes made by bingo'
+      git-user:
+        required: false
+        type: string
+        default: ${{ github.repository_owner }}
+        description: 'Git user name to use for the commit'
+      git-email:
+        required: false
+        type: string
+        default: ${{ github.repository_owner }}@users.noreply.github.com
+        description: 'Git user email to use for the commit'
+      push-ref:
+        required: false
+        type: string
+        default: ${{ github.head_ref }}
+        description: 'Git ref to push the changes to, defaults to the PR head ref'
 
 permissions:
   contents: write  # Required to push changes back to the PR branch.
@@ -76,8 +93,8 @@ jobs:
         id: changes
       - if: steps.changes.outputs.changes != '0'
         run: |
-          git config --local user.name "${{ github.repository_owner }}"
-          git config --local user.email "${{ github.repository_owner }}@users.noreply.github.com"
+          git config --local user.name "${{ input.git-user }}"
+          git config --local user.email "${{ input.git-email }}"
           git add .bingo/*
           git commit -m "${{ inputs.commit-message }}"
-          git push origin HEAD:${{ github.head_ref }}
+          git push origin HEAD:${{ input.push-ref }}
