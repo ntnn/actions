@@ -1,3 +1,5 @@
+name: bingo
+
 on:
 
   # The expected trigger:
