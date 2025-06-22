@@ -2,17 +2,21 @@ name: bingo
 
 on:
 
-  # The expected trigger:
-  # pull_request:
-  #   branches:
-  #     - main
-  #   paths:
-  #     - '.bingo/*.mod'
-
-  # uses: ntnn/actions/.github/workflows/bingo.yaml@main
-  # with:
-  #   base-ref: ${{ github.event.pull_request.base.sha }}
-  #   head-ref: ${{ github.event.pull_request.head.sha }}
+  # Workflow to update bingo files when a bingo tool dependency is
+  # changed. Intended for use with automated tools like renovate.
+  #
+  # name: bingo
+  # on:
+  #   pull_request:
+  #     branches:
+  #       - main
+  #     paths:
+  #       - '.bingo/*.mod'
+  # permissions:
+  #   contents: write # Required to push changes back to the PR branch.
+  # jobs:
+  #   bingo:
+  #     uses: ntnn/actions/.github/workflows/bingo.yaml@main
 
   workflow_call:
     inputs:
@@ -56,9 +60,6 @@ on:
         type: string
         default: ${{ github.head_ref }}
         description: 'Git ref to push the changes to, defaults to the PR head ref'
-
-permissions:
-  contents: write  # Required to push changes back to the PR branch.
 
 jobs:
   update-files:
