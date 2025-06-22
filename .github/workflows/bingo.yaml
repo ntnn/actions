@@ -65,7 +65,7 @@ jobs:
   update-files:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           # This needs a fetch depth large enough to include the PR base
           # and head commits to list the changed files.
@@ -84,7 +84,7 @@ jobs:
         id: changed-mod
       - run: echo "go-version=$(awk '/^go / { print $2 }' ${{ steps.changed-mod.outputs.changed-mod }})" >> "$GITHUB_OUTPUT"
         id: go-version
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
         with:
           go-version: ${{ steps.go-version.outputs.go-version }}
 
