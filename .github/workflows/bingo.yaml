@@ -75,8 +75,8 @@ jobs:
         id: changes
       - if: steps.changes.outputs.changes != '0'
         run: |
-          git config --local user.name "${{ input.git-user }}"
-          git config --local user.email "${{ input.git-email }}"
+          git config --local user.name "${{ inputs.git-user }}"
+          git config --local user.email "${{ inputs.git-email }}"
           git add .bingo/*
           git commit -m "${{ inputs.commit-message }}"
-          git push origin HEAD:${{ input.push-ref }}
+          git push origin HEAD:${{ inputs.push-ref }}
